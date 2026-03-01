@@ -1,18 +1,30 @@
-const sgMail = require('@sendgrid/mail');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  requireTLS: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
 
 async function sendEmail(to, subject, html) {
   if (!to) return { success: false, error: 'No email address' };
   try {
-    await sgMail.send({
-      from: { name: 'MediCare Pro', email: 'ganeshaddagiriggss6@gmail.com' },
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
       to,
       subject,
       html,
     });
-    console.log('✅ Email sent to', to);
+    console.log('Email sent to:', to);
     return { success: true };
   } catch (err) {
     console.error('Email error:', err.message);
