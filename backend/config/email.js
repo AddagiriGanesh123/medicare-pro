@@ -1,18 +1,25 @@
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: 'smtp.zoho.in',
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  }
+});
 
 async function sendEmail(to, subject, html) {
   if (!to) return { success: false, error: 'No email address' };
   try {
-    const { error } = await resend.emails.send({
-      from: 'MediCare Pro <onboarding@resend.dev>',
+    await transporter.sendMail({
+      from: 'MediCare Pro <ganeshaddagiri123@zohomail.in>',
       to,
       subject,
       html,
     });
-    if (error) { console.error('Email error:', error); return { success: false, error }; }
     console.log('Email sent to:', to);
     return { success: true };
   } catch (err) {
