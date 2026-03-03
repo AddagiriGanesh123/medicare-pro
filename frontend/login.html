@@ -3,64 +3,742 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MediCare Pro – Staff Login</title>
+<title>MediCare Pro — Secure Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-  .card { background: #fff; border-radius: 16px; padding: 48px 40px; width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
-  .logo { text-align: center; margin-bottom: 32px; }
-  .logo h1 { font-size: 28px; color: #1a73e8; font-weight: 700; }
-  .logo p { color: #777; font-size: 14px; margin-top: 4px; }
-  .form-group { margin-bottom: 20px; }
-  label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; }
-  input { width: 100%; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; transition: border 0.2s; }
-  input:focus { outline: none; border-color: #1a73e8; }
-  button { width: 100%; padding: 14px; background: #1a73e8; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-  button:hover { background: #1558b0; }
-  .error { background: #fce8e8; color: #c62828; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; }
-  .hint { text-align: center; margin-top: 20px; font-size: 13px; color: #999; }
-  .hint a { color: #1a73e8; text-decoration: none; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: 'DM Sans', sans-serif;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+}
+
+/* ═══════════════════════════════
+   FULL-SCREEN VIDEO BACKGROUND
+═══════════════════════════════ */
+.video-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.video-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Loading placeholder while video loads */
+.video-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, #0a2a2a 0%, #0d3d3d 40%, #061a1a 100%);
+  z-index: -1;
+}
+
+/* ═══════════════════════════════
+   CINEMATIC OVERLAYS
+═══════════════════════════════ */
+
+/* Dark gradient — strong on left and bottom so text is readable */
+.overlay-dark {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(90deg,  rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.25) 100%),
+    linear-gradient(0deg,   rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.20) 40%, transparent 70%),
+    linear-gradient(180deg, rgba(0,0,0,0.55) 0%, transparent 25%);
+  pointer-events: none;
+}
+
+/* Teal medical color grade */
+.overlay-tint {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(ellipse at 20% 60%, rgba(13,110,110,0.22) 0%, transparent 55%);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+/* Subtle scanline texture */
+.overlay-scan {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.04) 3px,
+    rgba(0,0,0,0.04) 4px
+  );
+  pointer-events: none;
+}
+
+/* Moving light beam across screen */
+.scanbeam {
+  position: fixed;
+  left: 0; right: 0;
+  height: 2px;
+  z-index: 3;
+  background: linear-gradient(90deg, transparent, rgba(94,220,200,0.2), transparent);
+  animation: beam 10s linear infinite;
+  pointer-events: none;
+  filter: blur(1px);
+}
+@keyframes beam { 0%{ top: -2px; opacity:0; } 3%{ opacity:1; } 97%{ opacity:1; } 100%{ top: 100vh; opacity:0; } }
+
+/* ═══════════════════════════════
+   HUD CORNERS
+═══════════════════════════════ */
+.hud {
+  position: fixed;
+  z-index: 10;
+  pointer-events: none;
+  font-family: 'DM Sans', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  line-height: 1.9;
+}
+.hud.tl { top: 22px; left: 24px; }
+.hud.tr { top: 22px; right: 24px; text-align: right; }
+.hud.bl { bottom: 22px; left: 24px; }
+.hud.br { bottom: 22px; right: 24px; text-align: right; }
+
+.hud-bracket {
+  width: 36px; height: 36px;
+  position: relative;
+  display: inline-block;
+}
+.hud.tl .hud-bracket::before  { content:''; position:absolute; top:0;    left:0;  width:100%; height:1px; background:rgba(94,220,200,0.5); }
+.hud.tl .hud-bracket::after   { content:''; position:absolute; top:0;    left:0;  width:1px; height:100%; background:rgba(94,220,200,0.5); }
+.hud.tr .hud-bracket::before  { content:''; position:absolute; top:0;    right:0; width:100%; height:1px; background:rgba(94,220,200,0.5); }
+.hud.tr .hud-bracket::after   { content:''; position:absolute; top:0;    right:0; width:1px; height:100%; background:rgba(94,220,200,0.5); }
+.hud.bl .hud-bracket::before  { content:''; position:absolute; bottom:0; left:0;  width:100%; height:1px; background:rgba(94,220,200,0.5); }
+.hud.bl .hud-bracket::after   { content:''; position:absolute; bottom:0; left:0;  width:1px; height:100%; background:rgba(94,220,200,0.5); }
+.hud.br .hud-bracket::before  { content:''; position:absolute; bottom:0; right:0; width:100%; height:1px; background:rgba(94,220,200,0.5); }
+.hud.br .hud-bracket::after   { content:''; position:absolute; bottom:0; right:0; width:1px; height:100%; background:rgba(94,220,200,0.5); }
+
+.hud.bl .hud-bracket, .hud.br .hud-bracket { display:block; margin-top:6px; }
+.hud.tl .hud-text, .hud.tr .hud-text { margin-top: 8px; }
+
+.live-dot {
+  display: inline-block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #5edcc8;
+  box-shadow: 0 0 7px #5edcc8;
+  margin-right: 5px;
+  vertical-align: middle;
+  animation: ldot 1.4s ease-in-out infinite;
+}
+@keyframes ldot { 0%,100%{opacity:1} 50%{opacity:.15} }
+
+/* ═══════════════════════════════
+   VIDEO CAPTION (bottom center)
+═══════════════════════════════ */
+.vid-caption {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 300;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 1px;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 1.2s ease;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+}
+
+/* ═══════════════════════════════
+   VIDEO PROGRESS BAR
+═══════════════════════════════ */
+.vid-progress {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: rgba(255,255,255,0.06);
+  z-index: 10;
+}
+.vid-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #0d6e6e, #5edcc8);
+  box-shadow: 0 0 10px rgba(94,220,200,0.6);
+  transition: width 0.5s linear;
+}
+
+/* ═══════════════════════════════
+   MAIN SCENE
+═══════════════════════════════ */
+.scene {
+  position: relative;
+  z-index: 20;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 0 7vw;
+}
+
+/* ═══════════════════════════════
+   LEFT TEXT
+═══════════════════════════════ */
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 580px;
+  padding-right: 60px;
+}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(94,220,200,0.12);
+  border: 1px solid rgba(94,220,200,0.3);
+  border-radius: 100px;
+  padding: 6px 16px;
+  font-size: 11px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(170,245,235,0.9);
+  width: fit-content;
+  margin-bottom: 28px;
+  opacity: 0;
+  animation: riseUp 1s 0.3s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+.tag-dot { width:6px; height:6px; border-radius:50%; background:#5edcc8; box-shadow:0 0 8px #5edcc8; animation:ldot 1.8s infinite; }
+
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(48px, 5vw, 78px);
+  font-weight: 300;
+  line-height: 1.08;
+  letter-spacing: -1.5px;
+  color: #fff;
+  margin-bottom: 22px;
+  text-shadow: 0 4px 40px rgba(0,0,0,0.6);
+  opacity: 0;
+  animation: riseUp 1s 0.5s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+.hero-title em { font-style: italic; color: #5edcc8; }
+.hero-title strong { font-weight: 600; }
+
+.hero-sub {
+  font-size: 16px; font-weight: 300; line-height: 1.85;
+  color: rgba(255,255,255,0.5);
+  max-width: 400px;
+  margin-bottom: 44px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  opacity: 0;
+  animation: riseUp 1s 0.7s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+
+/* ECG line */
+.ecg-row {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 40px;
+  opacity: 0;
+  animation: riseUp 1s 0.85s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+.ecg-lbl { font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(94,220,200,0.55); white-space:nowrap; }
+.ecg-path {
+  fill: none; stroke: #5edcc8; stroke-width: 1.5;
+  stroke-dasharray: 500; stroke-dashoffset: 500;
+  animation: ecgDraw 2.5s 1.5s ease forwards;
+  filter: drop-shadow(0 0 5px rgba(94,220,200,0.8));
+}
+@keyframes ecgDraw { to { stroke-dashoffset: 0; } }
+
+/* KPIs */
+.kpis {
+  display: flex; gap: 0;
+  opacity: 0;
+  animation: riseUp 1s 1s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+.kpi { flex:1; padding: 0 28px; border-left: 1px solid rgba(255,255,255,0.12); }
+.kpi:first-child { padding-left:0; border-left:none; }
+.kpi-n {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 40px; font-weight: 500; line-height: 1;
+  color: #fff; text-shadow: 0 0 30px rgba(94,220,200,0.3);
+}
+.kpi-n sup { font-size: 18px; color: #5edcc8; }
+.kpi-l { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-top: 6px; }
+
+@keyframes riseUp { from{opacity:0;transform:translateY(26px)} to{opacity:1;transform:translateY(0)} }
+
+/* ═══════════════════════════════
+   FORM CARD
+═══════════════════════════════ */
+.card {
+  width: 400px;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 28px;
+  padding: 44px 40px 38px;
+  backdrop-filter: blur(50px) saturate(180%);
+  -webkit-backdrop-filter: blur(50px) saturate(180%);
+  box-shadow:
+    0 0 0 1px rgba(94,220,200,0.05),
+    0 30px 100px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  animation: riseUp 1s 0.5s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+
+/* glowing top edge */
+.card::before {
+  content: '';
+  position: absolute; top:0; left:0; right:0; height:1px;
+  background: linear-gradient(90deg, transparent, rgba(94,220,200,0.9), rgba(255,255,255,0.4), rgba(94,220,200,0.9), transparent);
+  animation: cardTopGlow 4s ease-in-out infinite;
+}
+@keyframes cardTopGlow { 0%,100%{opacity:0.5} 50%{opacity:1} }
+
+/* corner glow */
+.card::after {
+  content: '';
+  position: absolute; bottom:-50px; right:-50px;
+  width:180px; height:180px;
+  background: radial-gradient(circle, rgba(94,220,200,0.1), transparent 70%);
+  pointer-events: none;
+}
+
+/* Brand inside card */
+.card-brand {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 24px;
+}
+.card-brand-icon {
+  width: 46px; height: 46px; border-radius: 14px;
+  background: linear-gradient(135deg, rgba(13,110,110,0.9), rgba(20,165,165,0.7));
+  border: 1px solid rgba(94,220,200,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(13,110,110,0.4);
+  animation: iconPulse 3s ease-in-out infinite;
+}
+@keyframes iconPulse { 0%,100%{box-shadow:0 4px 20px rgba(13,110,110,0.3)} 50%{box-shadow:0 4px 32px rgba(94,220,200,0.5)} }
+.card-brand-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 500; color: #fff; letter-spacing: 0.3px;
+}
+.card-brand-sub {
+  font-size: 10px; font-weight: 400; letter-spacing: 2.5px; text-transform: uppercase;
+  color: rgba(94,220,200,0.45); margin-top: 2px;
+}
+
+/* separator */
+.card-sep {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(94,220,200,0.4), rgba(255,255,255,0.1), transparent);
+  margin: 20px 0;
+}
+
+.card-greeting {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px; font-weight: 400; line-height: 1.25;
+  color: rgba(255,255,255,0.92);
+  margin-bottom: 6px;
+}
+.card-greeting em { font-style: italic; color: #5edcc8; }
+.card-sub { font-size: 13px; font-weight: 300; color: rgba(255,255,255,0.4); margin-bottom: 26px; }
+
+/* FIELDS */
+.field { margin-bottom: 16px; }
+.field label {
+  display: block;
+  font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 9px;
+}
+.iw { position: relative; }
+.iw input {
+  width: 100%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 12px;
+  padding: 13px 18px 13px 48px;
+  font-size: 14px; font-family: 'DM Sans', sans-serif;
+  color: rgba(255,255,255,0.92);
+  outline: none;
+  transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+}
+.iw input::placeholder { color: rgba(255,255,255,0.2); }
+.iw input:focus {
+  border-color: rgba(94,220,200,0.6);
+  background: rgba(94,220,200,0.07);
+  box-shadow: 0 0 0 3px rgba(94,220,200,0.1), 0 0 20px rgba(94,220,200,0.08);
+}
+.iw-icon {
+  position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+  opacity: 0.3; transition: opacity 0.25s; line-height: 0;
+}
+.iw:focus-within .iw-icon { opacity: 0.85; }
+.iw-icon svg { width: 17px; height: 17px; fill: none; stroke: #5edcc8; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.iw::after {
+  content: '';
+  position: absolute; bottom: 1px; left: 50%;
+  width: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, #5edcc8, transparent);
+  transform: translateX(-50%);
+  border-radius: 2px;
+  transition: width 0.35s cubic-bezier(0.22,1,0.36,1);
+}
+.iw:focus-within::after { width: 65%; }
+
+.f-forgot { display:flex; justify-content:flex-end; margin-top:7px; }
+.f-forgot a { font-size: 11px; color: rgba(94,220,200,0.6); text-decoration:none; transition: color 0.2s; }
+.f-forgot a:hover { color: #5edcc8; }
+
+/* ERROR */
+.errmsg {
+  display: none; align-items: center; gap: 9px;
+  background: rgba(220,38,38,0.1);
+  border: 1px solid rgba(220,38,38,0.3);
+  border-left: 3px solid rgba(220,38,38,0.8);
+  color: #fca5a5;
+  border-radius: 10px; padding: 11px 14px;
+  font-size: 12px; font-weight: 500;
+  margin-bottom: 16px;
+}
+
+/* BUTTON */
+.btn {
+  width: 100%; margin-top: 20px;
+  padding: 15px 24px;
+  border: 1px solid rgba(94,220,200,0.5);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(13,110,110,0.8), rgba(20,140,140,0.7));
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: all 0.25s;
+  box-shadow: 0 6px 30px rgba(13,110,110,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+  opacity: 0; transition: opacity 0.25s;
+}
+.btn::after {
+  content: '';
+  position: absolute;
+  top: -50%; left: -75%; width: 50%; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 12px 44px rgba(13,110,110,0.55), 0 0 50px rgba(94,220,200,0.1); border-color: rgba(94,220,200,0.8); }
+.btn:hover::before { opacity: 1; }
+.btn:hover::after { left: 175%; }
+.btn:active { transform: translateY(0); }
+
+.btn-inner { display:flex; align-items:center; justify-content:center; gap:10px; position:relative; z-index:1; }
+.btn-arr { width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-size:13px; transition:transform .25s; }
+.btn:hover .btn-arr { transform: translateX(4px); }
+.spin { display:none; width:15px; height:15px; border:2px solid rgba(255,255,255,0.25); border-top-color:#fff; border-radius:50%; animation:sp .65s linear infinite; }
+@keyframes sp { to{transform:rotate(360deg)} }
+
+/* PATIENT PORTAL */
+.portal {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 16px; padding: 13px 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  text-decoration: none;
+  background: rgba(255,255,255,0.03);
+  transition: all 0.25s;
+}
+.portal:hover { border-color: rgba(94,220,200,0.3); background: rgba(94,220,200,0.06); transform: translateX(3px); }
+.portal-ico { width:32px; height:32px; border-radius:9px; background:rgba(94,220,200,0.12); border:1px solid rgba(94,220,200,0.2); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+.portal-t { font-size:12px; font-weight:600; color:rgba(255,255,255,0.7); }
+.portal-s { font-size:11px; color:rgba(255,255,255,0.3); margin-top:1px; }
+.portal-a { margin-left:auto; color:rgba(255,255,255,0.25); font-size:17px; transition:transform .2s,color .2s; }
+.portal:hover .portal-a { transform:translateX(3px); color:#5edcc8; }
+
+/* TRUST */
+.trust { display:flex; justify-content:space-around; margin-top:20px; padding-top:18px; border-top:1px solid rgba(255,255,255,0.07); }
+.ti { display:flex; align-items:center; gap:5px; font-size:10px; font-weight:500; color:rgba(255,255,255,0.22); letter-spacing:.5px; }
+.ti-ok { width:14px; height:14px; border-radius:50%; background:rgba(94,220,200,0.12); border:1px solid rgba(94,220,200,0.25); display:flex; align-items:center; justify-content:center; font-size:8px; color:#5edcc8; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .scene { justify-content: center; padding: 24px 20px; }
+  .hero { display: none; }
+  .card { width: 100%; max-width: 420px; }
+}
 </style>
 </head>
 <body>
-<div class="card">
-  <div class="logo">
-    <h1>🏥 MediCare Pro</h1>
-    <p>Hospital Management System</p>
-  </div>
-  <div class="error" id="error"></div>
-  <div class="form-group">
-    <label>Email Address</label>
-    <input type="email" id="email" placeholder="Enter email address" autocomplete="off">
-  </div>
-  <div class="form-group">
-    <label>Password</label>
-    <input type="password" id="password" placeholder="Enter password" autocomplete="new-password">
-  </div>
-  <button onclick="login()">Sign In</button>
-  <div class="hint">Patient? <a href="/portal">Go to Patient Portal →</a></div>
+
+<!-- ═══ VIDEO BACKGROUND ═══ -->
+<div class="video-container">
+  <!--
+    Free Pexels medical/hospital videos:
+    - Doctors and nurses caring for patients
+    - Hospital corridor activity
+    - Patient recovering, becoming active
+    All autoplay, muted, loop — required for browser autoplay policy
+  -->
+  <video id="bgvid" autoplay muted loop playsinline preload="auto">
+    <!-- Primary: Patient in hospital, recovery journey -->
+    <source src="https://videos.pexels.com/video-files/4031818/4031818-uhd_2560_1440_25fps.mp4" type="video/mp4">
+    <!-- Fallback 1: Medical team / doctors -->
+    <source src="https://videos.pexels.com/video-files/3363990/3363990-uhd_2560_1440_25fps.mp4" type="video/mp4">
+    <!-- Fallback 2: Hospital corridor -->
+    <source src="https://videos.pexels.com/video-files/6129507/6129507-hd_1920_1080_25fps.mp4" type="video/mp4">
+    <!-- Fallback 3 -->
+    <source src="https://videos.pexels.com/video-files/3376292/3376292-uhd_2560_1440_25fps.mp4" type="video/mp4">
+  </video>
 </div>
+
+<!-- ═══ OVERLAYS ═══ -->
+<div class="overlay-dark"></div>
+<div class="overlay-tint"></div>
+<div class="overlay-scan"></div>
+<div class="scanbeam"></div>
+
+<!-- ═══ HUD CORNERS ═══ -->
+<div class="hud tl">
+  <div class="hud-bracket"></div>
+  <div class="hud-text">
+    <span class="live-dot"></span>Live System<br>
+    Node: Alpha-07<br>
+    Ver: 4.2.1
+  </div>
+</div>
+<div class="hud tr">
+  <div class="hud-bracket"></div>
+  <div class="hud-text">
+    Medicare Pro<br>
+    <span id="clock">──:──:──</span>
+  </div>
+</div>
+<div class="hud bl">
+  <div class="hud-text">
+    AES-256 Encrypted<br>
+    HIPAA Certified
+  </div>
+  <div class="hud-bracket"></div>
+</div>
+<div class="hud br">
+  <div class="hud-text">
+    2.4M+ Patients<br>
+    500+ Hospitals
+  </div>
+  <div class="hud-bracket"></div>
+</div>
+
+<!-- ═══ VIDEO CAPTION ═══ -->
+<div class="vid-caption" id="caption">Every patient deserves the very best care.</div>
+
+<!-- ═══ VIDEO PROGRESS ═══ -->
+<div class="vid-progress"><div class="vid-bar" id="vidbar"></div></div>
+
+<!-- ═══ MAIN SCENE ═══ -->
+<div class="scene">
+
+  <!-- LEFT HERO TEXT -->
+  <div class="hero">
+    <div class="hero-tag"><span class="tag-dot"></span>Trusted by 500+ Hospitals</div>
+
+    <h1 class="hero-title">
+      Healing lives<br>
+      with <em>precision</em><br>
+      &amp; <strong>compassion.</strong>
+    </h1>
+
+    <p class="hero-sub">
+      MediCare Pro empowers your entire hospital team — from first appointment to full recovery.
+    </p>
+
+    <div class="ecg-row">
+      <span class="ecg-lbl">Patient Vitals</span>
+      <svg width="200" height="34" viewBox="0 0 200 34" overflow="visible">
+        <path class="ecg-path" d="M0,17 L24,17 L30,17 L34,5 L38,29 L42,17 L54,17 L58,11 L62,23 L66,17 L100,17 L104,17 L108,5 L112,29 L116,17 L128,17 L132,11 L136,23 L140,17 L200,17"/>
+      </svg>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-n">2.4<sup>M+</sup></div><div class="kpi-l">Patients</div></div>
+      <div class="kpi"><div class="kpi-n">500<sup>+</sup></div><div class="kpi-l">Hospitals</div></div>
+      <div class="kpi"><div class="kpi-n">99<sup>.9%</sup></div><div class="kpi-l">Uptime</div></div>
+    </div>
+  </div>
+
+  <!-- FORM CARD -->
+  <div class="card">
+
+    <div class="card-brand">
+      <div class="card-brand-icon">⚕️</div>
+      <div>
+        <div class="card-brand-name">MediCare Pro</div>
+        <div class="card-brand-sub">Hospital Management System</div>
+      </div>
+    </div>
+
+    <div class="card-sep"></div>
+
+    <div class="card-greeting">Welcome <em>back.</em></div>
+    <div class="card-sub">Sign in to access your dashboard</div>
+
+    <!-- Error -->
+    <div class="errmsg" id="err">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="errtxt"></span>
+    </div>
+
+    <div class="field">
+      <label>Email Address</label>
+      <div class="iw">
+        <span class="iw-icon"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 7l10 7 10-7"/></svg></span>
+        <input type="email" id="email" placeholder="staff@hospital.com" autocomplete="email">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Password</label>
+      <div class="iw">
+        <span class="iw-icon"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></span>
+        <input type="password" id="pw" placeholder="Enter your password" autocomplete="current-password">
+      </div>
+      <div class="f-forgot"><a href="#">Forgot password?</a></div>
+    </div>
+
+    <button class="btn" id="btn" onclick="doLogin()">
+      <div class="btn-inner">
+        <span id="blbl">Sign In to Dashboard</span>
+        <div class="spin" id="sp"></div>
+        <div class="btn-arr" id="ba">→</div>
+      </div>
+    </button>
+
+    <a href="/portal" class="portal">
+      <div class="portal-ico">🩺</div>
+      <div>
+        <div class="portal-t">Patient Portal</div>
+        <div class="portal-s">Book appointments & view health records</div>
+      </div>
+      <span class="portal-a">›</span>
+    </a>
+
+    <div class="trust">
+      <div class="ti"><span class="ti-ok">✓</span>HIPAA</div>
+      <div class="ti"><span class="ti-ok">✓</span>SSL</div>
+      <div class="ti"><span class="ti-ok">✓</span>Encrypted</div>
+      <div class="ti"><span class="ti-ok">✓</span>SOC 2</div>
+    </div>
+
+  </div>
+</div>
+
 <script>
-async function login() {
+/* ── LIVE CLOCK ── */
+(function tick(){
+  const el = document.getElementById('clock');
+  if(el){ const n=new Date(), p=x=>String(x).padStart(2,'0'); el.textContent=`${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`; }
+  setTimeout(tick, 1000);
+})();
+
+/* ── VIDEO PROGRESS + CAPTIONS ── */
+const vid = document.getElementById('bgvid');
+const bar = document.getElementById('vidbar');
+const cap = document.getElementById('caption');
+
+const captions = [
+  { at: 0,   text: 'Every patient deserves the very best care.' },
+  { at: 0.15, text: 'From the first moment of care...' },
+  { at: 0.35, text: 'Dedicated hands. Healing hearts.' },
+  { at: 0.55, text: 'Watching patients grow stronger every day.' },
+  { at: 0.75, text: 'Back on their feet — thriving and healthy.' },
+  { at: 0.92, text: 'Powered by MediCare Pro ⚕' },
+];
+
+let lastCapIdx = -1;
+
+vid.addEventListener('timeupdate', () => {
+  if (!vid.duration) return;
+  const pct = vid.currentTime / vid.duration;
+  bar.style.width = (pct * 100) + '%';
+
+  for (let i = captions.length - 1; i >= 0; i--) {
+    if (pct >= captions[i].at && lastCapIdx !== i) {
+      lastCapIdx = i;
+      cap.style.opacity = '0';
+      setTimeout(() => {
+        cap.textContent = captions[i].text;
+        cap.style.opacity = '1';
+      }, 600);
+      break;
+    }
+  }
+});
+
+/* ── LOGIN ── */
+async function doLogin() {
   const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  const errEl = document.getElementById('error');
-  errEl.style.display = 'none';
+  const pw    = document.getElementById('pw').value;
+  const err   = document.getElementById('err');
+  const etxt  = document.getElementById('errtxt');
+  const btn   = document.getElementById('btn');
+  const blbl  = document.getElementById('blbl');
+  const sp    = document.getElementById('sp');
+  const ba    = document.getElementById('ba');
+
+  err.style.display = 'none';
+  btn.disabled = true;
+  blbl.textContent = 'Signing in…';
+  sp.style.display = 'block';
+  ba.style.display = 'none';
+
   try {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+    const res  = await fetch('/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pw })
     });
     const data = await res.json();
-    if (!res.ok) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+    if (!res.ok) {
+      etxt.textContent = data.error || 'Invalid credentials.';
+      err.style.display = 'flex';
+      btn.disabled = false; blbl.textContent = 'Sign In to Dashboard';
+      sp.style.display = 'none'; ba.style.display = 'flex';
+      return;
+    }
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
-    window.location.href = '/';
-  } catch (e) { errEl.textContent = 'Connection error. Is the server running?'; errEl.style.display = 'block'; }
+    blbl.textContent = 'Welcome back ✓';
+    setTimeout(() => window.location.href = '/', 500);
+  } catch(e) {
+    etxt.textContent = 'Connection error. Is the server running?';
+    err.style.display = 'flex';
+    btn.disabled = false; blbl.textContent = 'Sign In to Dashboard';
+    sp.style.display = 'none'; ba.style.display = 'flex';
+  }
 }
-document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
-// Redirect if already logged in
+document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 if (localStorage.getItem('token')) window.location.href = '/';
 </script>
 </body>
