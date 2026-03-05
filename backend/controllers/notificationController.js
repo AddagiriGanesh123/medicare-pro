@@ -169,7 +169,7 @@ function buildEmailHtml(title, body, patientName) {
               <table cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;" align="center">
                 <tr>
                   <td style="background:#071a17;border-radius:10px;padding:14px 32px;text-align:center;">
-                    <span style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:${accent};letter-spacing:2px;text-transform:uppercase;">View in Patient Portal →</span>
+                    <a href="https://medicare-pro-1zjo.onrender.com/portal" target="_blank" style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:${accent};letter-spacing:2px;text-transform:uppercase;text-decoration:none;">View in Patient Portal →</a>
                   </td>
                 </tr>
               </table>
