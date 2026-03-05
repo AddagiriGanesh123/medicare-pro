@@ -3,145 +3,999 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MediCare Pro – Dashboard</title>
-<link rel="stylesheet" href="/css/style.css">
+<title>MediCare Pro — Command Centre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════
+   DESIGN SYSTEM
+═══════════════════════════════════════════════════ */
+:root {
+  --ink:    #04120f;
+  --ink2:   #071a15;
+  --ink3:   #0b211a;
+  --ink4:   #0f2920;
+  --surface:#122620;
+  --lift:   #162d27;
+
+  --teal:   #00e5c4;
+  --teal2:  #00c4a8;
+  --teal3:  #009980;
+  --jade:   rgba(0,229,196,.08);
+  --jade2:  rgba(0,229,196,.14);
+  --jade3:  rgba(0,229,196,.22);
+
+  --gold:   #d4a843;
+  --rose:   #f04a6a;
+  --violet: #8b6cff;
+  --sky:    #3ea8ff;
+
+  --t1:     #d8eeea;
+  --t2:     rgba(216,238,234,.55);
+  --t3:     rgba(216,238,234,.28);
+  --t4:     rgba(216,238,234,.12);
+
+  --edge:   rgba(0,229,196,.1);
+  --edge2:  rgba(216,238,234,.06);
+
+  --r-sm:   10px;
+  --r-md:   14px;
+  --r-lg:   20px;
+  --r-xl:   26px;
+
+  --mono:  'JetBrains Mono', monospace;
+  --sans:  'Syne', sans-serif;
+  --serif: 'Playfair Display', serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: var(--sans);
+  background: var(--ink);
+  color: var(--t1);
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+}
+
+/* ── GRAIN OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 999; pointer-events: none;
+  opacity: .022;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 128px;
+}
+
+/* ── AMBIENT GLOW ── */
+.ambient {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  overflow: hidden;
+}
+.amb-blob {
+  position: absolute; border-radius: 50%; filter: blur(90px);
+  animation: drift 14s ease-in-out infinite;
+}
+.amb-blob.a {
+  width: 640px; height: 480px;
+  top: -180px; left: -120px;
+  background: radial-gradient(circle, rgba(0,180,150,.14) 0%, transparent 70%);
+  animation-delay: 0s;
+}
+.amb-blob.b {
+  width: 500px; height: 500px;
+  bottom: -200px; right: -100px;
+  background: radial-gradient(circle, rgba(212,168,67,.07) 0%, transparent 70%);
+  animation-delay: -7s;
+}
+.amb-blob.c {
+  width: 300px; height: 300px;
+  top: 50%; left: 55%;
+  background: radial-gradient(circle, rgba(0,200,180,.05) 0%, transparent 70%);
+  animation-delay: -3s;
+}
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(30px, -20px) scale(1.05); }
+  66%       { transform: translate(-20px, 15px) scale(.97); }
+}
+
+/* ── GRID TEXTURE ── */
+.grid-tex {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,229,196,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,196,.022) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+/* ═══════════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════════ */
+#app { display: flex; height: 100vh; position: relative; z-index: 1; }
+
+/* ═══════════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════════ */
+.sidebar {
+  width: 248px; flex-shrink: 0;
+  background: var(--ink2);
+  border-right: 1px solid var(--edge);
+  display: flex; flex-direction: column;
+  position: relative; z-index: 10;
+  overflow: hidden;
+}
+
+/* sidebar shimmer */
+.sidebar::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 280px;
+  background: radial-gradient(ellipse 160px 240px at 50% 0%, rgba(0,229,196,.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* logo */
+.sb-logo {
+  padding: 30px 22px 22px;
+  border-bottom: 1px solid var(--edge2);
+  position: relative; z-index: 1;
+}
+.sb-emblem {
+  display: flex; align-items: center; gap: 13px; margin-bottom: 6px;
+}
+.sb-gem {
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(0,229,196,.18) 0%, rgba(0,229,196,.05) 100%);
+  border: 1px solid rgba(0,229,196,.25);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 24px rgba(0,229,196,.12), inset 0 1px 0 rgba(255,255,255,.06);
+  position: relative;
+}
+.sb-gem::before {
+  content: '✦';
+  font-size: 18px; color: var(--teal);
+  text-shadow: 0 0 16px var(--teal), 0 0 32px rgba(0,229,196,.5);
+}
+.sb-wordmark {
+  font-family: var(--serif);
+  font-size: 20px; font-weight: 500;
+  color: #fff; letter-spacing: .04em; line-height: 1.1;
+}
+.sb-wordmark em { font-style: italic; color: var(--teal); }
+.sb-caption {
+  font-size: 9px; letter-spacing: .26em; text-transform: uppercase;
+  color: var(--t3); font-weight: 400; margin-top: 10px;
+  font-family: var(--mono);
+}
+
+/* nav */
+.nav-section { padding: 20px 14px 8px; }
+.nav-label {
+  font-size: 9px; font-weight: 700; letter-spacing: .26em;
+  text-transform: uppercase; color: var(--t4);
+  padding: 0 8px; margin-bottom: 6px;
+  font-family: var(--mono);
+}
+.nav-links { list-style: none; }
+.nav-links li {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 12px; border-radius: var(--r-sm);
+  cursor: pointer; font-size: 13px; font-weight: 500;
+  color: var(--t3); letter-spacing: .02em;
+  transition: all .22s; margin-bottom: 2px;
+  position: relative;
+}
+.nav-links li:hover { background: rgba(255,255,255,.04); color: var(--t1); }
+.nav-links li.active {
+  background: linear-gradient(100deg, rgba(0,229,196,.12) 0%, transparent 80%);
+  color: #fff;
+  box-shadow: inset 3px 0 0 var(--teal);
+}
+.nav-ic {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; transition: all .22s;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.05);
+}
+.nav-links li.active .nav-ic {
+  background: rgba(0,229,196,.16);
+  border-color: rgba(0,229,196,.28);
+  box-shadow: 0 0 14px rgba(0,229,196,.15);
+}
+.nav-text { flex: 1; }
+.nav-arrow {
+  font-size: 10px; color: var(--teal); opacity: 0;
+  transition: opacity .2s, transform .2s;
+  transform: translateX(-4px);
+}
+.nav-links li.active .nav-arrow { opacity: 1; transform: translateX(0); }
+
+/* user zone */
+.sb-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--edge2);
+  padding: 16px 14px;
+}
+.sb-user-card {
+  background: linear-gradient(135deg, var(--ink3), var(--ink4));
+  border: 1px solid var(--edge);
+  border-radius: var(--r-md); padding: 13px 14px;
+  display: flex; align-items: center; gap: 11px;
+  position: relative; overflow: hidden;
+}
+.sb-user-card::before {
+  content: ''; position: absolute; top: -30px; right: -30px;
+  width: 90px; height: 90px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,229,196,.07) 0%, transparent 70%);
+}
+.sb-ava {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--teal), var(--teal2));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 14px; color: var(--ink);
+  font-weight: 700; box-shadow: 0 0 14px rgba(0,229,196,.25);
+}
+.sb-uname { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 1px; }
+.sb-urole { font-size: 9px; color: var(--t3); letter-spacing: .1em; font-family: var(--mono); }
+#userRole { font-size: 9px; color: var(--t3); letter-spacing: .1em; font-family: var(--mono); text-transform: uppercase; }
+.sb-logout-btn {
+  margin-left: auto; padding: 6px 11px; flex-shrink: 0;
+  background: rgba(255,255,255,.05); border: 1px solid var(--edge2);
+  color: var(--t3); border-radius: 8px; cursor: pointer;
+  font-family: var(--mono); font-size: 9px; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase; transition: all .2s;
+}
+.sb-logout-btn:hover { border-color: var(--rose); color: var(--rose); background: rgba(240,74,106,.06); }
+
+/* ═══════════════════════════════════════════════════
+   MAIN AREA
+═══════════════════════════════════════════════════ */
+.main-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+/* ── TOPBAR ── */
+.topbar {
+  height: 58px; flex-shrink: 0;
+  background: rgba(7,26,21,.85);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--edge2);
+  display: flex; align-items: center;
+  padding: 0 30px; gap: 18px;
+  position: relative; z-index: 50;
+}
+.tb-crumb {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 10px;
+  color: var(--t3); letter-spacing: .1em;
+}
+.tb-crumb span { color: var(--teal); }
+.tb-sep { color: var(--t4); }
+.tb-title {
+  font-family: var(--serif); font-size: 20px; font-weight: 400;
+  color: #fff; letter-spacing: .03em;
+}
+.tb-title em { font-style: italic; color: var(--teal); }
+.tb-gap { flex: 1; }
+
+.tb-status {
+  display: flex; align-items: center; gap: 14px;
+}
+.tb-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--jade); border: 1px solid var(--edge);
+  border-radius: 20px; padding: 5px 12px;
+}
+.tb-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 6px var(--teal); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.tb-dot-txt { font-size: 9px; color: var(--teal); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; font-family: var(--mono); }
+.tb-clock { font-family: var(--mono); font-size: 12px; color: var(--t3); letter-spacing: .08em; }
+
+/* ── CONTENT ── */
+.main-content { flex: 1; overflow-y: auto; overflow-x: hidden; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,229,196,.15); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,229,196,.3); }
+
+.page { display: none; padding: 28px 30px; animation: pgIn .38s cubic-bezier(.22,1,.36,1); }
+.page.active { display: block; }
+@keyframes pgIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── PAGE HEADER ── */
+.page-header {
+  display: flex; justify-content: space-between;
+  align-items: flex-end; margin-bottom: 26px;
+}
+.ph-eyebrow {
+  font-size: 9px; font-weight: 700; letter-spacing: .26em;
+  text-transform: uppercase; color: var(--teal); opacity: .75;
+  margin-bottom: 7px; font-family: var(--mono);
+}
+.ph-h1 {
+  font-family: var(--serif); font-size: 36px; font-weight: 400;
+  color: #fff; line-height: 1.02; letter-spacing: .02em;
+}
+.ph-h1 em { font-style: italic; color: var(--teal); }
+
+/* ═══════════════════════════════════════════════════
+   STAT CARDS — hero treatment
+═══════════════════════════════════════════════════ */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 14px; margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--ink2);
+  border: 1px solid var(--edge2);
+  border-radius: var(--r-lg); padding: 24px 22px;
+  position: relative; overflow: hidden;
+  cursor: default;
+  transition: transform .28s cubic-bezier(.22,1,.36,1), border-color .28s, box-shadow .28s;
+}
+.stat-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(0,229,196,.2);
+  box-shadow: 0 24px 48px rgba(0,0,0,.5), 0 0 0 1px rgba(0,229,196,.08);
+}
+/* glow at top */
+.stat-card::before {
+  content: ''; position: absolute;
+  top: 0; left: 16px; right: 16px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--teal), transparent);
+  opacity: .5;
+}
+.s2::before { background: linear-gradient(90deg, transparent, var(--violet), transparent); }
+.s3::before { background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+.s4::before { background: linear-gradient(90deg, transparent, var(--rose), transparent); }
+
+/* bg glow blob */
+.stat-card::after {
+  content: ''; position: absolute;
+  top: -60px; right: -60px; width: 160px; height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,229,196,.07) 0%, transparent 65%);
+  pointer-events: none;
+}
+.s2::after { background: radial-gradient(circle, rgba(139,108,255,.07) 0%, transparent 65%); }
+.s3::after { background: radial-gradient(circle, rgba(212,168,67,.07) 0%, transparent 65%); }
+.s4::after { background: radial-gradient(circle, rgba(240,74,106,.07) 0%, transparent 65%); }
+
+.sc-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--jade); border: 1px solid var(--edge);
+  border-radius: 20px; padding: 3px 9px; margin-bottom: 16px;
+  position: relative; z-index: 1;
+}
+.s2 .sc-badge { background: rgba(139,108,255,.08); border-color: rgba(139,108,255,.18); }
+.s3 .sc-badge { background: rgba(212,168,67,.08); border-color: rgba(212,168,67,.18); }
+.s4 .sc-badge { background: rgba(240,74,106,.08); border-color: rgba(240,74,106,.18); }
+.sc-badge-ic { font-size: 13px; }
+.sc-badge-lbl {
+  font-size: 9px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--teal); font-family: var(--mono);
+}
+.s2 .sc-badge-lbl { color: var(--violet); }
+.s3 .sc-badge-lbl { color: var(--gold); }
+.s4 .sc-badge-lbl { color: var(--rose); }
+
+.stat-num {
+  font-family: var(--serif);
+  font-size: 52px; font-weight: 400; line-height: 1;
+  color: #fff; margin-bottom: 6px;
+  position: relative; z-index: 1; letter-spacing: -.01em;
+}
+.stat-num sup { font-size: 20px; color: var(--teal); vertical-align: super; font-style: italic; margin-left: 2px; }
+.s2 .stat-num sup { color: var(--violet); }
+.s3 .stat-num sup { color: var(--gold); }
+.s4 .stat-num sup { color: var(--rose); }
+.stat-label {
+  font-size: 10px; color: var(--t3); font-weight: 400;
+  letter-spacing: .1em; text-transform: uppercase;
+  position: relative; z-index: 1; font-family: var(--mono);
+}
+
+/* ═══════════════════════════════════════════════════
+   DATA CARDS
+═══════════════════════════════════════════════════ */
+.lx-card {
+  background: var(--ink2);
+  border: 1px solid var(--edge2);
+  border-radius: var(--r-lg); overflow: hidden;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 28px rgba(0,0,0,.25);
+}
+.lx-card-hdr {
+  padding: 16px 24px; border-bottom: 1px solid var(--edge2);
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(90deg, rgba(0,229,196,.04) 0%, transparent 50%);
+}
+.lx-card-title {
+  font-family: var(--serif); font-size: 18px; font-weight: 400;
+  color: #fff; letter-spacing: .04em;
+  display: flex; align-items: center; gap: 10px;
+}
+.lx-card-title::before {
+  content: ''; display: inline-block;
+  width: 2px; height: 16px; border-radius: 1px;
+  background: linear-gradient(180deg, var(--teal), transparent);
+}
+
+/* ── same for recent-section (dashboard) ── */
+.recent-section {
+  background: var(--ink2); border: 1px solid var(--edge2);
+  border-radius: var(--r-lg); overflow: hidden;
+  box-shadow: 0 4px 28px rgba(0,0,0,.25);
+}
+.recent-section h3 {
+  font-family: var(--serif); font-size: 18px; font-weight: 400;
+  color: #fff; padding: 16px 24px; border-bottom: 1px solid var(--edge2);
+  background: linear-gradient(90deg, rgba(0,229,196,.04) 0%, transparent 50%);
+  display: flex; align-items: center; gap: 10px; letter-spacing: .04em;
+}
+.recent-section h3::before {
+  content: ''; display: inline-block;
+  width: 2px; height: 16px; border-radius: 1px;
+  background: linear-gradient(180deg, var(--teal), transparent);
+}
+
+/* ═══════════════════════════════════════════════════
+   TABLE
+═══════════════════════════════════════════════════ */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead tr { background: rgba(0,229,196,.03); }
+.data-table th {
+  padding: 13px 22px; text-align: left;
+  font-size: 9px; font-weight: 600; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--teal);
+  border-bottom: 1px solid var(--edge2); white-space: nowrap;
+  opacity: .8; font-family: var(--mono);
+}
+.data-table td {
+  padding: 14px 22px; font-size: 13px; color: var(--t2);
+  border-bottom: 1px solid rgba(255,255,255,.035);
+  vertical-align: middle; font-weight: 400; transition: color .15s;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tbody tr { transition: background .15s; }
+.data-table tbody tr:hover td { background: rgba(0,229,196,.04); color: var(--t1); }
+.data-table td b {
+  color: #fff; font-weight: 500; font-family: var(--mono);
+  font-size: 11px; letter-spacing: .05em;
+}
+
+/* ═══════════════════════════════════════════════════
+   SEARCH
+═══════════════════════════════════════════════════ */
+.search-bar { margin-bottom: 18px; }
+.search-wrap {
+  position: relative; display: inline-block; width: 100%; max-width: 380px;
+}
+.search-icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: var(--t3); font-size: 13px; pointer-events: none;
+}
+.search-bar input {
+  width: 100%; padding: 11px 18px 11px 38px;
+  background: var(--ink2); border: 1px solid var(--edge2);
+  border-radius: var(--r-sm); font-size: 13px;
+  font-family: var(--sans); color: var(--t1); outline: none;
+  transition: all .25s;
+}
+.search-bar input:focus { border-color: rgba(0,229,196,.35); box-shadow: 0 0 0 4px rgba(0,229,196,.06); }
+.search-bar input::placeholder { color: var(--t3); }
+
+/* ═══════════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════════ */
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 11px 22px;
+  background: linear-gradient(135deg, #00d4b4, #00f0d0);
+  color: var(--ink); border: none; border-radius: var(--r-sm);
+  font-family: var(--sans); font-size: 11px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; cursor: pointer;
+  transition: all .25s;
+  box-shadow: 0 4px 18px rgba(0,212,180,.3);
+  text-decoration: none;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,212,180,.45); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-secondary {
+  padding: 11px 22px; background: rgba(255,255,255,.05);
+  border: 1px solid var(--edge2); color: var(--t2);
+  border-radius: var(--r-sm); font-family: var(--sans);
+  font-size: 11px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; cursor: pointer; transition: all .2s;
+}
+.btn-secondary:hover { border-color: rgba(0,229,196,.28); color: var(--teal); background: var(--jade); }
+
+.btn-sm { padding: 5px 13px; font-size: 10px; border-radius: 7px; letter-spacing: .07em; }
+.btn-danger {
+  background: rgba(240,74,106,.09); color: var(--rose);
+  border: 1px solid rgba(240,74,106,.18); padding: 5px 13px;
+  border-radius: 7px; cursor: pointer; font-family: var(--sans);
+  font-size: 10px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; transition: all .2s;
+}
+.btn-danger:hover { background: var(--rose); color: #fff; }
+.btn-success {
+  background: rgba(0,229,196,.09); color: var(--teal);
+  border: 1px solid rgba(0,229,196,.18); padding: 5px 13px;
+  border-radius: 7px; cursor: pointer; font-family: var(--sans);
+  font-size: 10px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; transition: all .2s;
+}
+.btn-success:hover { background: var(--teal); color: var(--ink); }
+
+/* ═══════════════════════════════════════════════════
+   BADGES
+═══════════════════════════════════════════════════ */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 9px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; white-space: nowrap;
+  font-family: var(--mono);
+}
+.badge::before { content: ''; width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
+.badge-green  { background: rgba(0,229,196,.09); color: var(--teal); border: 1px solid rgba(0,229,196,.18); }
+.badge-green::before  { background: var(--teal); }
+.badge-yellow { background: rgba(212,168,67,.1); color: var(--gold); border: 1px solid rgba(212,168,67,.2); }
+.badge-yellow::before { background: var(--gold); }
+.badge-blue   { background: rgba(139,108,255,.09); color: var(--violet); border: 1px solid rgba(139,108,255,.2); }
+.badge-blue::before   { background: var(--violet); }
+.badge-red    { background: rgba(240,74,106,.09); color: var(--rose); border: 1px solid rgba(240,74,106,.18); }
+.badge-red::before    { background: var(--rose); }
+.badge-grey   { background: rgba(255,255,255,.05); color: var(--t3); border: 1px solid var(--edge2); }
+.badge-grey::before   { background: var(--t3); }
+
+/* ═══════════════════════════════════════════════════
+   PAGINATION
+═══════════════════════════════════════════════════ */
+.pagination { display: flex; gap: 6px; margin-top: 18px; justify-content: flex-end; padding: 0 24px 20px; }
+.pagination button {
+  padding: 7px 13px; border: 1px solid var(--edge2);
+  background: var(--ink3); border-radius: 8px; cursor: pointer;
+  font-family: var(--mono); font-size: 11px; color: var(--t3); transition: all .2s;
+}
+.pagination button:hover { border-color: rgba(0,229,196,.3); color: var(--teal); }
+.pagination button.active {
+  background: linear-gradient(135deg, #00d4b4, #00f0d0);
+  color: var(--ink); border-color: transparent; font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════════════ */
+.modal {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.72); backdrop-filter: blur(14px);
+  z-index: 1000; align-items: center; justify-content: center; padding: 24px;
+}
+.modal.open { display: flex; }
+.modal-box {
+  background: var(--ink2); border: 1px solid var(--edge);
+  border-radius: var(--r-xl); width: 100%; max-width: 600px;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 48px 96px rgba(0,0,0,.7), 0 0 0 1px rgba(0,229,196,.04);
+  animation: mIn .36s cubic-bezier(.22,1,.36,1);
+}
+@keyframes mIn { from { opacity: 0; transform: translateY(22px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+.modal-header { border-radius: var(--r-xl) var(--r-xl) 0 0; overflow: hidden; }
+.mhdr {
+  background: linear-gradient(130deg, var(--ink) 0%, var(--ink3) 100%);
+  padding: 24px 28px; border-bottom: 1px solid var(--edge);
+  display: flex; align-items: center; justify-content: space-between;
+  position: relative; overflow: hidden;
+}
+.mhdr::before {
+  content: ''; position: absolute; top: -50px; right: -50px;
+  width: 150px; height: 150px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,229,196,.1) 0%, transparent 70%);
+}
+.mhdr h3 {
+  font-family: var(--serif); font-size: 26px; font-weight: 400;
+  color: #fff; letter-spacing: .04em; position: relative; z-index: 1;
+}
+.mhdr h3 em { font-style: italic; color: var(--teal); }
+.mhdr-close {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: rgba(255,255,255,.07); border: 1px solid var(--edge2);
+  color: var(--t3); font-size: 17px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s; position: relative; z-index: 1; font-family: inherit;
+}
+.mhdr-close:hover { border-color: var(--teal); color: var(--teal); }
+
+.modal-body { padding: 28px; }
+.modal-footer {
+  padding: 18px 28px; border-top: 1px solid var(--edge2);
+  display: flex; justify-content: flex-end; gap: 10px;
+  background: rgba(0,0,0,.2); border-radius: 0 0 var(--r-xl) var(--r-xl);
+}
+
+/* ── FORM ── */
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block; font-size: 9px; font-weight: 600;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: rgba(0,229,196,.65); margin-bottom: 8px; font-family: var(--mono);
+}
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 11px 15px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--edge2);
+  border-radius: var(--r-sm); font-size: 13px;
+  font-family: var(--sans); color: var(--t1); outline: none;
+  transition: all .25s; -webkit-appearance: none;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-color: rgba(0,229,196,.38);
+  background: rgba(0,229,196,.04);
+  box-shadow: 0 0 0 4px rgba(0,229,196,.06);
+}
+.form-group input::placeholder, .form-group textarea::placeholder { color: var(--t3); }
+.form-group select option { background: var(--ink2); color: var(--t1); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.bill-item-row { display: grid; grid-template-columns: 1fr 60px 100px 30px; gap: 8px; margin-bottom: 8px; align-items: center; }
+.bill-item-row input {
+  padding: 9px 11px; border: 1px solid var(--edge2); border-radius: 8px;
+  font-size: 12px; font-family: var(--sans); background: rgba(255,255,255,.04);
+  color: var(--t1); outline: none; transition: border-color .2s;
+}
+.bill-item-row input:focus { border-color: rgba(0,229,196,.35); }
+.bill-item-row input::placeholder { color: var(--t3); }
+
+/* ═══════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════ */
+.toast {
+  position: fixed; bottom: 32px; right: 32px;
+  background: var(--ink3); color: var(--t1);
+  padding: 14px 20px; border-radius: var(--r-md);
+  font-family: var(--sans); font-size: 13px;
+  opacity: 0; transform: translateY(18px) scale(.96);
+  transition: all .36s cubic-bezier(.22,1,.36,1);
+  z-index: 9999; max-width: 320px; pointer-events: none;
+  border: 1px solid var(--edge2);
+  box-shadow: 0 20px 56px rgba(0,0,0,.55);
+}
+.toast.show { opacity: 1; transform: translateY(0) scale(1); }
+.toast.success { border-left: 3px solid var(--teal); }
+.toast.error   { border-left: 3px solid var(--rose); }
+
+/* ═══════════════════════════════════════════════════
+   CHAT PANEL
+═══════════════════════════════════════════════════ */
+.chat-nav-btn {
+  position: fixed; bottom: 28px; left: 272px; z-index: 500;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 22px;
+  background: linear-gradient(135deg, #00d4b4, #00f0d0);
+  color: var(--ink); border: none; border-radius: 12px;
+  font-family: var(--sans); font-size: 11px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; cursor: pointer;
+  box-shadow: 0 8px 26px rgba(0,212,180,.35); transition: all .25s;
+}
+.chat-nav-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(0,212,180,.5); }
+.total-badge {
+  min-width: 18px; height: 18px; background: var(--rose); color: #fff;
+  border-radius: 9px; padding: 0 5px; font-size: 9px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.chat-panel {
+  position: fixed; bottom: 82px; left: 272px; z-index: 499;
+  width: 700px; height: 490px;
+  background: var(--ink2); border-radius: var(--r-xl);
+  border: 1px solid var(--edge);
+  box-shadow: 0 40px 80px rgba(0,0,0,.65);
+  display: none; overflow: hidden;
+}
+.chat-panel.open { display: flex; flex-direction: column; animation: chatIn .36s cubic-bezier(.22,1,.36,1); }
+@keyframes chatIn { from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)} }
+.chat-panel-header {
+  background: linear-gradient(130deg, var(--ink), var(--ink3));
+  padding: 16px 22px; border-bottom: 1px solid var(--edge2);
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.chat-panel-header h3 { font-family: var(--serif); font-size: 19px; font-weight: 400; color: #fff; letter-spacing: .04em; }
+.chat-close-btn {
+  width: 30px; height: 30px; border-radius: 7px;
+  background: rgba(255,255,255,.06); border: 1px solid var(--edge2);
+  color: var(--t3); cursor: pointer; display: flex; align-items: center;
+  justify-content: center; font-size: 15px; transition: all .2s;
+}
+.chat-close-btn:hover { border-color: var(--teal); color: var(--teal); }
+.chat-layout { display: flex; flex: 1; overflow: hidden; }
+.chat-patient-list {
+  width: 210px; border-right: 1px solid var(--edge2);
+  overflow-y: auto; background: rgba(0,0,0,.2); flex-shrink: 0;
+}
+.chat-patient-item {
+  padding: 12px 15px; cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,.03); transition: background .15s;
+}
+.chat-patient-item:hover { background: rgba(255,255,255,.04); }
+.chat-patient-item.active { background: var(--jade); border-left: 2px solid var(--teal); }
+.pt-name { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+.pt-id { font-size: 9px; color: var(--t3); font-family: var(--mono); letter-spacing: .05em; }
+.pt-last { font-size: 11px; color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
+.pt-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; }
+.unread-badge { background: var(--rose); color: #fff; border-radius: 9px; padding: 1px 7px; font-size: 9px; font-weight: 700; }
+.priority-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.priority-dot.priority-normal  { background: var(--teal); }
+.priority-dot.priority-high    { background: var(--gold); }
+.priority-dot.priority-urgent  { background: var(--rose); box-shadow: 0 0 6px var(--rose); }
+.chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.chat-main-header { padding: 12px 16px; border-bottom: 1px solid var(--edge2); flex-shrink: 0; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: rgba(0,0,0,.15); }
+.chat-empty { text-align: center; color: var(--t3); margin: auto; font-family: var(--serif); font-style: italic; font-size: 17px; }
+.chat-bubble { max-width: 72%; }
+.chat-bubble.patient { align-self: flex-start; }
+.chat-bubble.staff   { align-self: flex-end; }
+.chat-bubble > div:first-child { padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.65; }
+.chat-bubble.patient > div:first-child { background: rgba(255,255,255,.06); border: 1px solid var(--edge2); border-bottom-left-radius: 4px; color: var(--t1); }
+.chat-bubble.staff   > div:first-child { background: linear-gradient(135deg, rgba(0,200,172,.88), rgba(0,232,204,.88)); color: var(--ink); border-bottom-right-radius: 4px; }
+.chat-bubble .meta { font-size: 10px; color: var(--t3); margin-top: 4px; padding: 0 4px; font-family: var(--mono); }
+.chat-bubble.staff .meta { text-align: right; }
+.chat-priority-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--edge2); flex-shrink: 0; background: rgba(0,0,0,.2); }
+.priority-btn { padding: 4px 12px; border: 1px solid var(--edge2); border-radius: 20px; background: transparent; font-family: var(--mono); font-size: 9px; font-weight: 500; cursor: pointer; transition: all .2s; color: var(--t3); letter-spacing: .08em; text-transform: uppercase; }
+.priority-btn.selected { background: var(--jade); border-color: rgba(0,229,196,.28); color: var(--teal); }
+.chat-input-row { display: flex; border-top: 1px solid var(--edge2); flex-shrink: 0; background: var(--ink2); }
+.chat-input-row textarea { flex: 1; resize: none; height: 48px; border: none; outline: none; padding: 14px 16px; font-family: var(--sans); font-size: 13px; color: var(--t1); background: transparent; }
+.chat-input-row textarea::placeholder { color: var(--t3); }
+.chat-send-btn { width: 52px; background: linear-gradient(135deg, #00d4b4, #00f0d0); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--ink); transition: all .2s; flex-shrink: 0; }
+.chat-send-btn:hover { background: linear-gradient(135deg, var(--ink), var(--ink3)); color: var(--teal); }
+
+/* ── STATUS SELECT ── */
+select.status-select {
+  background: rgba(255,255,255,.05); border: 1px solid var(--edge2);
+  color: var(--t2); border-radius: 7px; padding: 5px 10px;
+  font-family: var(--mono); font-size: 10px; cursor: pointer;
+  outline: none; transition: border-color .2s;
+  -webkit-appearance: none;
+}
+select.status-select option { background: var(--ink2); }
+
+/* ── ENTRY ANIMATIONS ── */
+.stat-card { animation: cardUp .5s cubic-bezier(.22,1,.36,1) both; }
+.stat-card:nth-child(1) { animation-delay: .05s; }
+.stat-card:nth-child(2) { animation-delay: .10s; }
+.stat-card:nth-child(3) { animation-delay: .15s; }
+.stat-card:nth-child(4) { animation-delay: .20s; }
+@keyframes cardUp { from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)} }
+
+/* ── RESPONSIVE ── */
+@media(max-width:1200px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:768px) {
+  .sidebar { width: 62px; }
+  .sb-wordmark, .sb-caption, .nav-label, .sb-uname, #userRole { display: none; }
+  .nav-links li { justify-content: center; padding: 10px; }
+  .nav-text, .nav-arrow { display: none; }
+  .sb-footer { padding: 10px 8px; }
+  .sb-user-card { padding: 10px; }
+  .sb-logout-btn { display: none; }
+  .page { padding: 18px 14px; }
+  .chat-panel, .chat-nav-btn { left: 78px; }
+  .chat-panel { width: calc(100vw - 98px); }
+  .form-row { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
+
+<!-- ambient atmosphere -->
+<div class="ambient">
+  <div class="amb-blob a"></div>
+  <div class="amb-blob b"></div>
+  <div class="amb-blob c"></div>
+</div>
+<div class="grid-tex"></div>
+
 <div id="app">
-  <!-- Sidebar -->
+
+  <!-- ════ SIDEBAR ════ -->
   <nav class="sidebar">
-    <div class="sidebar-header">
-      <h2>🏥 MediCare</h2>
-      <span id="userRole">Pro</span>
+    <div class="sb-logo">
+      <div class="sb-emblem">
+        <div class="sb-gem"></div>
+        <div class="sb-wordmark">Medi<em>Care</em> Pro</div>
+      </div>
+      <div class="sb-caption">Hospital Command Centre</div>
     </div>
-    <ul class="nav-links">
-      <li class="active" data-page="dashboard"><span>📊</span> Dashboard</li>
-      <li data-page="patients"><span>👥</span> Patients</li>
-      <li data-page="appointments"><span>📅</span> Appointments</li>
-      <li data-page="reports"><span>📋</span> Reports</li>
-      <li data-page="bills"><span>💳</span> Billing</li>
-      <li data-page="messages"><span>💬</span> Messages <span id="nav-msg-badge" style="display:none;background:#ef4444;color:#fff;border-radius:50%;padding:1px 6px;font-size:11px;font-weight:700;margin-left:6px">0</span></li>
-    </ul>
-    <div class="sidebar-footer">
-      <span id="userName"></span>
-      <button onclick="logout()">Logout</button>
+
+    <div class="nav-section">
+      <div class="nav-label">Navigation</div>
+      <ul class="nav-links">
+        <li class="active" data-page="dashboard">
+          <div class="nav-ic">📊</div>
+          <span class="nav-text">Dashboard</span>
+          <span class="nav-arrow">›</span>
+        </li>
+        <li data-page="patients">
+          <div class="nav-ic">👥</div>
+          <span class="nav-text">Patients</span>
+          <span class="nav-arrow">›</span>
+        </li>
+        <li data-page="appointments">
+          <div class="nav-ic">📅</div>
+          <span class="nav-text">Appointments</span>
+          <span class="nav-arrow">›</span>
+        </li>
+        <li data-page="reports">
+          <div class="nav-ic">📋</div>
+          <span class="nav-text">Reports</span>
+          <span class="nav-arrow">›</span>
+        </li>
+        <li data-page="bills">
+          <div class="nav-ic">💳</div>
+          <span class="nav-text">Billing</span>
+          <span class="nav-arrow">›</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="sb-footer">
+      <div class="sb-user-card">
+        <div class="sb-ava" id="sb-ava">A</div>
+        <div>
+          <div class="sb-uname" id="userName">Admin</div>
+          <div id="userRole">staff</div>
+        </div>
+        <button class="sb-logout-btn" onclick="logout()">Exit</button>
+      </div>
     </div>
   </nav>
 
-  <!-- Main content -->
-  <main class="main-content">
-    <!-- Dashboard Page -->
-    <div id="page-dashboard" class="page active">
-      <div class="page-header"><h1>Dashboard</h1></div>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-icon">👥</div><div><div class="stat-num" id="stat-patients">–</div><div class="stat-label">Total Patients</div></div></div>
-        <div class="stat-card"><div class="stat-icon">📅</div><div><div class="stat-num" id="stat-appts">–</div><div class="stat-label">Today's Appointments</div></div></div>
-        <div class="stat-card"><div class="stat-icon">📋</div><div><div class="stat-num" id="stat-reports">–</div><div class="stat-label">Pending Reports</div></div></div>
-        <div class="stat-card"><div class="stat-icon">💳</div><div><div class="stat-num" id="stat-bills">–</div><div class="stat-label">Unpaid Bills</div></div></div>
-      </div>
-      <div class="recent-section">
-        <h3>Recent Patients</h3>
-        <table class="data-table" id="recent-patients-table">
-          <thead><tr><th>Patient ID</th><th>Name</th><th>Phone</th><th>Registered</th><th>Action</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
+  <!-- ════ MAIN ════ -->
+  <div class="main-wrap">
 
-    <!-- Patients Page -->
-    <div id="page-patients" class="page">
-      <div class="page-header">
-        <h1>Patients</h1>
-        <button class="btn-primary" onclick="showModal('patient-modal')">+ Add Patient</button>
+    <!-- topbar -->
+    <div class="topbar">
+      <div class="tb-crumb">
+        <span>MediCare Pro</span>
+        <span class="tb-sep">/</span>
+        <span id="tb-crumb-page">Dashboard</span>
       </div>
-      <div class="search-bar"><input type="text" id="patient-search" placeholder="Search by name, ID, phone…" oninput="searchPatients()"></div>
-      <table class="data-table" id="patients-table">
-        <thead><tr><th>Patient ID</th><th>Name</th><th>Phone</th><th>Gender</th><th>Blood</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <div id="patients-pagination" class="pagination"></div>
-    </div>
-
-    <!-- Appointments Page -->
-    <div id="page-appointments" class="page">
-      <div class="page-header">
-        <h1>Appointments</h1>
-        <button class="btn-primary" onclick="showModal('appt-modal')">+ New Appointment</button>
-      </div>
-      <div id="appt-requests-section" style="margin-bottom:24px;display:none">
-        <h3 style="color:#1a237e;margin-bottom:12px;font-size:16px">Pending Appointment Requests</h3>
-        <table class="data-table" id="appt-requests-table">
-          <thead><tr><th>Patient</th><th>Doctor</th><th>Date</th><th>Time</th><th>Reason</th><th>Actions</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <h3 style="color:#1a237e;margin-bottom:12px;font-size:16px">All Appointments</h3>
-      <table class="data-table" id="appts-table">
-        <thead><tr><th>Patient</th><th>Doctor</th><th>Date</th><th>Time</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <!-- Reports Page -->
-    <div id="page-reports" class="page">
-      <div class="page-header">
-        <h1>Medical Reports</h1>
-        <button class="btn-primary" onclick="showModal('report-modal')">+ New Report</button>
-      </div>
-      <table class="data-table" id="reports-table">
-        <thead><tr><th>Patient</th><th>Type</th><th>Title</th><th>Doctor</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <!-- Bills Page -->
-    <div id="page-bills" class="page">
-      <div class="page-header">
-        <h1>Billing</h1>
-        <button class="btn-primary" onclick="showModal('bill-modal')">+ Create Bill</button>
-      </div>
-      <table class="data-table" id="bills-table">
-        <thead><tr><th>Bill #</th><th>Patient</th><th>Total</th><th>Paid</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <!-- Messages Page -->
-    <div id="page-messages" class="page">
-      <div class="page-header"><h1>Patient Messages</h1></div>
-      <div class="msg-layout">
-        <div class="msg-sidebar">
-          <div class="msg-sidebar-header">Conversations</div>
-          <div id="msg-patient-items"><div class="msg-loading">Loading...</div></div>
+      <div class="tb-gap"></div>
+      <div class="tb-status">
+        <div class="tb-clock" id="tb-clock">--:--:--</div>
+        <div class="tb-pill">
+          <div class="tb-dot"></div>
+          <span class="tb-dot-txt">Live</span>
         </div>
-        <div class="msg-main" id="msg-chat-area">
-          <div class="msg-welcome">
-            <h3>Patient Messages</h3>
-            <p>Select a patient from the left to view messages</p>
+      </div>
+    </div>
+
+    <main class="main-content">
+
+      <!-- ── DASHBOARD ── -->
+      <div id="page-dashboard" class="page active">
+        <div class="page-header">
+          <div>
+            <div class="ph-eyebrow">Overview</div>
+            <div class="ph-h1">Admin <em>Dashboard</em></div>
           </div>
         </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="sc-badge"><span class="sc-badge-ic">👥</span><span class="sc-badge-lbl">Patients</span></div>
+            <div class="stat-num" id="stat-patients">–</div>
+            <div class="stat-label">Total Registered</div>
+          </div>
+          <div class="stat-card s2">
+            <div class="sc-badge"><span class="sc-badge-ic">📅</span><span class="sc-badge-lbl">Appointments</span></div>
+            <div class="stat-num" id="stat-appts">–</div>
+            <div class="stat-label">Today's Schedule</div>
+          </div>
+          <div class="stat-card s3">
+            <div class="sc-badge"><span class="sc-badge-ic">📋</span><span class="sc-badge-lbl">Reports</span></div>
+            <div class="stat-num" id="stat-reports">–</div>
+            <div class="stat-label">Pending Review</div>
+          </div>
+          <div class="stat-card s4">
+            <div class="sc-badge"><span class="sc-badge-ic">💳</span><span class="sc-badge-lbl">Billing</span></div>
+            <div class="stat-num" id="stat-bills">–</div>
+            <div class="stat-label">Unpaid Bills</div>
+          </div>
+        </div>
+
+        <div class="recent-section">
+          <h3>Recent Patients</h3>
+          <table class="data-table" id="recent-patients-table">
+            <thead><tr><th>Patient ID</th><th>Name</th><th>Phone</th><th>Registered</th><th>Action</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
-    </div>
-  </main>
+
+      <!-- ── PATIENTS ── -->
+      <div id="page-patients" class="page">
+        <div class="page-header">
+          <div><div class="ph-eyebrow">Records</div><div class="ph-h1">All <em>Patients</em></div></div>
+          <button class="btn-primary" onclick="showModal('patient-modal')">＋ Add Patient</button>
+        </div>
+        <div class="search-bar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="patient-search" placeholder="Search by name, ID, phone…" oninput="searchPatients()">
+          </div>
+        </div>
+        <div class="lx-card">
+          <table class="data-table" id="patients-table">
+            <thead><tr><th>Patient ID</th><th>Name</th><th>Phone</th><th>Gender</th><th>Blood</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="patients-pagination" class="pagination"></div>
+      </div>
+
+      <!-- ── APPOINTMENTS ── -->
+      <div id="page-appointments" class="page">
+        <div class="page-header">
+          <div><div class="ph-eyebrow">Schedule</div><div class="ph-h1">All <em>Appointments</em></div></div>
+          <button class="btn-primary" onclick="showModal('appt-modal')">＋ New Appointment</button>
+        </div>
+        <div class="lx-card">
+          <table class="data-table" id="appts-table">
+            <thead><tr><th>Patient</th><th>Doctor</th><th>Date</th><th>Time</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── REPORTS ── -->
+      <div id="page-reports" class="page">
+        <div class="page-header">
+          <div><div class="ph-eyebrow">Documents</div><div class="ph-h1">Medical <em>Reports</em></div></div>
+          <button class="btn-primary" onclick="showModal('report-modal')">＋ New Report</button>
+        </div>
+        <div class="lx-card">
+          <table class="data-table" id="reports-table">
+            <thead><tr><th>Patient</th><th>Type</th><th>Title</th><th>Doctor</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── BILLS ── -->
+      <div id="page-bills" class="page">
+        <div class="page-header">
+          <div><div class="ph-eyebrow">Finance</div><div class="ph-h1">Bills &amp; <em>Payments</em></div></div>
+          <button class="btn-primary" onclick="showModal('bill-modal')">＋ Create Bill</button>
+        </div>
+        <div class="lx-card">
+          <table class="data-table" id="bills-table">
+            <thead><tr><th>Bill #</th><th>Patient</th><th>Total</th><th>Paid</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
 </div>
 
-<!-- Patient Modal -->
+<!-- ════ MODALS ════ -->
 <div class="modal" id="patient-modal">
   <div class="modal-box">
-    <div class="modal-header"><h3>Register Patient</h3><button onclick="closeModal('patient-modal')">✕</button></div>
+    <div class="modal-header"><div class="mhdr"><h3>Register <em>Patient</em></h3><button class="mhdr-close" onclick="closeModal('patient-modal')">✕</button></div></div>
     <div class="modal-body">
       <div class="form-row">
         <div class="form-group"><label>Full Name *</label><input id="p-name" placeholder="Full name"></div>
         <div class="form-group"><label>Phone *</label><input id="p-phone" placeholder="Phone number"></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Email</label><input id="p-email" type="email" placeholder="Email"></div>
+        <div class="form-group"><label>Email</label><input id="p-email" type="email" placeholder="Email address"></div>
         <div class="form-group"><label>Date of Birth</label><input id="p-dob" type="date"></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Gender</label>
-          <select id="p-gender"><option value="">Select</option><option>male</option><option>female</option><option>other</option></select>
-        </div>
+        <div class="form-group"><label>Gender</label><select id="p-gender"><option value="">Select</option><option>male</option><option>female</option><option>other</option></select></div>
         <div class="form-group"><label>Blood Group</label><input id="p-blood" placeholder="e.g. O+"></div>
       </div>
       <div class="form-group"><label>Address</label><textarea id="p-address" rows="2" placeholder="Address"></textarea></div>
@@ -149,7 +1003,7 @@
         <div class="form-group"><label>Emergency Contact</label><input id="p-ec-name" placeholder="Name"></div>
         <div class="form-group"><label>Emergency Phone</label><input id="p-ec-phone" placeholder="Phone"></div>
       </div>
-      <div class="form-group"><label>Portal Password (patient login)</label><input id="p-password" type="password" placeholder="Set portal password"></div>
+      <div class="form-group"><label>Portal Password</label><input id="p-password" type="password" placeholder="Set portal password"></div>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('patient-modal')">Cancel</button>
@@ -158,19 +1012,16 @@
   </div>
 </div>
 
-<!-- Appointment Modal -->
 <div class="modal" id="appt-modal">
   <div class="modal-box">
-    <div class="modal-header"><h3>Schedule Appointment</h3><button onclick="closeModal('appt-modal')">✕</button></div>
+    <div class="modal-header"><div class="mhdr"><h3>Schedule <em>Appointment</em></h3><button class="mhdr-close" onclick="closeModal('appt-modal')">✕</button></div></div>
     <div class="modal-body">
       <div class="form-group"><label>Patient ID *</label><input id="a-pid" placeholder="MED1001"></div>
       <div class="form-row">
         <div class="form-group"><label>Date *</label><input id="a-date" type="date"></div>
         <div class="form-group"><label>Time *</label><input id="a-time" type="time"></div>
       </div>
-      <div class="form-group"><label>Type</label>
-        <select id="a-type"><option>consultation</option><option>follow-up</option><option>emergency</option><option>lab</option><option>surgery</option></select>
-      </div>
+      <div class="form-group"><label>Type</label><select id="a-type"><option>consultation</option><option>follow-up</option><option>emergency</option><option>lab</option><option>surgery</option></select></div>
       <div class="form-group"><label>Notes</label><textarea id="a-notes" rows="2"></textarea></div>
     </div>
     <div class="modal-footer">
@@ -180,10 +1031,9 @@
   </div>
 </div>
 
-<!-- Report Modal -->
 <div class="modal" id="report-modal">
   <div class="modal-box">
-    <div class="modal-header"><h3>Create Report</h3><button onclick="closeModal('report-modal')">✕</button></div>
+    <div class="modal-header"><div class="mhdr"><h3>Create <em>Report</em></h3><button class="mhdr-close" onclick="closeModal('report-modal')">✕</button></div></div>
     <div class="modal-body">
       <div class="form-row">
         <div class="form-group"><label>Patient ID *</label><input id="r-pid" placeholder="MED1001"></div>
@@ -201,16 +1051,15 @@
   </div>
 </div>
 
-<!-- Bill Modal -->
 <div class="modal" id="bill-modal">
   <div class="modal-box">
-    <div class="modal-header"><h3>Create Bill</h3><button onclick="closeModal('bill-modal')">✕</button></div>
+    <div class="modal-header"><div class="mhdr"><h3>Create <em>Bill</em></h3><button class="mhdr-close" onclick="closeModal('bill-modal')">✕</button></div></div>
     <div class="modal-body">
       <div class="form-group"><label>Patient ID *</label><input id="b-pid" placeholder="MED1001"></div>
       <div class="form-group">
         <label>Bill Items</label>
         <div id="bill-items"></div>
-        <button class="btn-secondary" style="margin-top:8px" onclick="addBillItem()">+ Add Item</button>
+        <button class="btn-secondary" style="margin-top:8px" onclick="addBillItem()">＋ Add Item</button>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Tax (₹)</label><input id="b-tax" type="number" value="0"></div>
@@ -228,7 +1077,41 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- clock + topbar nav label -->
+<script>
+(function(){
+  const tick=()=>{const el=document.getElementById('tb-clock');if(el)el.textContent=new Date().toLocaleTimeString('en-GB');};
+  tick();setInterval(tick,1000);
+
+  const labels={dashboard:'Dashboard',patients:'Patients',appointments:'Appointments',reports:'Reports',bills:'Billing'};
+  document.querySelectorAll('.nav-links li').forEach(li=>{
+    li.addEventListener('click',()=>{
+      const p=li.dataset.page;
+      const c=document.getElementById('tb-crumb-page');
+      if(c)c.textContent=labels[p]||p;
+    });
+  });
+
+  // avatar initials
+  const u=JSON.parse(localStorage.getItem('user')||'null');
+  if(u){
+    const el=document.getElementById('sb-ava');
+    if(el)el.textContent=(u.name||'A').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  }
+})();
+</script>
+
 <script src="/js/app.js"></script>
 
+<!-- ════ CHAT ════ -->
+<button class="chat-nav-btn" onclick="toggleChatPanel()">💬 Messages<span class="total-badge" id="staff-total-badge" style="display:none">0</span></button>
+<div class="chat-panel" id="staff-chat-panel">
+  <div class="chat-panel-header"><h3>Patient Messages</h3><button class="chat-close-btn" onclick="toggleChatPanel()">✕</button></div>
+  <div class="chat-layout">
+    <div class="chat-patient-list" id="staff-patient-list"><div style="padding:14px;font-size:11px;color:var(--t3);text-align:center;font-family:var(--mono)">Loading…</div></div>
+    <div class="chat-main" id="staff-chat-main"><div class="chat-messages"><div class="chat-empty">Select a patient to begin</div></div></div>
+  </div>
+</div>
+<script>(function(){var sel=null,prio="normal",tok=localStorage.getItem("token"),poll=null;function api(path,opts){opts=opts||{};return fetch("/api"+path,Object.assign({},opts,{headers:Object.assign({"Authorization":"Bearer "+tok,"Content-Type":"application/json"},opts.headers||{})})).then(function(r){return r.json();});}window.toggleChatPanel=function(){var p=document.getElementById("staff-chat-panel");var isOpen=p.classList.toggle("open");if(isOpen){loadList();if(!poll)poll=setInterval(refresh,8000);}else{if(poll){clearInterval(poll);poll=null;}}};function loadList(){api("/chat/patients").then(function(pts){if(!Array.isArray(pts))return;var total=pts.reduce(function(s,p){return s+(p.unread_count||0);},0);var b=document.getElementById("staff-total-badge");if(total>0){b.textContent=total;b.style.display="flex";}else{b.style.display="none";}var list=document.getElementById("staff-patient-list");if(!pts.length){list.innerHTML="<div style='padding:14px;font-size:11px;color:var(--t3);text-align:center;font-family:var(--mono)'>No messages</div>";return;}list.innerHTML=pts.map(function(p){var pc=p.highest_priority?"priority-"+p.highest_priority:"priority-normal";var last=p.last_message?p.last_message.substring(0,28):"No messages";var badge=p.unread_count>0?"<span class='unread-badge'>"+p.unread_count+"</span>":"";return "<div class='chat-patient-item"+(sel==p.id?" active":"")+"'"+" onclick='selectPt("+p.id+",\""+p.name+"\",\""+p.patient_id+"\")'>"+"<div class='pt-name'>"+p.name+"</div>"+"<div class='pt-id'>"+p.patient_id+"</div>"+"<div class='pt-last'>"+last+"</div>"+"<div class='pt-meta'><span class='priority-dot "+pc+"'></span>"+badge+"</div></div>";}).join("");}).catch(function(){});}window.selectPt=function(id,name,pid){sel=id;api("/chat/read/"+id,{method:"PUT"}).then(loadList);var main=document.getElementById("staff-chat-main");main.innerHTML="<div class='chat-main-header'><div class='pt-name'>"+name+"</div><div class='pt-id'>"+pid+"</div></div>"+"<div class='chat-messages' id='scm'></div>"+"<div class='chat-priority-row'>"+"<span style='font-size:9px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;font-family:var(--mono)'>Priority:</span>"+"<button class='priority-btn selected' id='pn' onclick='sp(\"normal\")'>Normal</button>"+"<button class='priority-btn' id='ph' onclick='sp(\"high\")' style='color:#d4a843'>High</button>"+"<button class='priority-btn' id='pu' onclick='sp(\"urgent\")' style='color:#f04a6a'>Urgent</button></div>"+"<div class='chat-input-row'><textarea id='sci' placeholder='Type reply…' onkeydown='sk(event)'></textarea><button class='chat-send-btn' onclick='ss()'>➤</button></div>";prio="normal";loadMsgs();};window.sp=function(p){prio=p;["normal","high","urgent"].forEach(function(x){var b=document.getElementById("p"+x[0]);if(b)b.classList.toggle("selected",x===p);});};function loadMsgs(){if(!sel)return;api("/chat/patients/"+sel).then(function(msgs){var box=document.getElementById("scm");if(!box)return;if(!Array.isArray(msgs)||!msgs.length){box.innerHTML="<div class='chat-empty'>No messages yet</div>";return;}box.innerHTML=msgs.map(function(m){var ip=m.sender_role==="patient";var t=new Date(m.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});var name=ip?"Patient":(m.staff_name||"Staff");return "<div class='chat-bubble "+(ip?"patient":"staff")+"'><div>"+m.message.replace(/\n/g,"<br>")+"</div><div class='meta'>"+name+" · "+t+"</div></div>";}).join("");box.scrollTop=box.scrollHeight;}).catch(function(){});}window.ss=function(){var inp=document.getElementById("sci");if(!inp||!sel)return;var msg=inp.value.trim();if(!msg)return;inp.value="";api("/chat/send",{method:"POST",body:JSON.stringify({patient_id:sel,message:msg,priority:prio})}).then(function(){loadMsgs();loadList();}).catch(function(){});};window.sk=function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();ss();}};function refresh(){loadList();if(sel)loadMsgs();}setInterval(function(){if(!tok)return;api("/chat/unread-total").then(function(d){var b=document.getElementById("staff-total-badge");if(d.total>0){b.textContent=d.total;b.style.display="flex";}else{b.style.display="none";}}).catch(function(){});},15000);})();</script>
 </body>
 </html>
