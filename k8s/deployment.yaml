@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medicare-pro
+  namespace: default
+  labels:
+    app: medicare-pro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: medicare-pro
+  template:
+    metadata:
+      labels:
+        app: medicare-pro
+    spec:
+      containers:
+        - name: medicare-pro
+          image: ganeshaddagiri/medicare-pro:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: NODE_ENV
+              value: "production"
+            - name: DB_HOST
+              value: "postgres-service"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: medicare-pro-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: medicare-pro-secret
+                  key: DB_PASSWORD
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: medicare-pro-secret
+                  key: DB_NAME
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: medicare-pro-secret
+                  key: JWT_SECRET
